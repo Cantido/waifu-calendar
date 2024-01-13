@@ -1,0 +1,18 @@
+query BirthdaysQuery ($user:String!) {
+  User(name:$user) {
+    favourites {
+      characters {
+        nodes {
+          name {
+            full
+          }
+          dateOfBirth {
+            year
+            month
+            day
+          }
+        }
+      }
+    }
+  }
+}
