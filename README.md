@@ -10,7 +10,7 @@ Given an AniList username, fetches that user's favorite characters and reports o
 After pulling the project, run:
 
 ```console
-$ cargo run --bin cli -- $ANILIST_USERNAME
+$ cargo run -- get $ANILIST_USERNAME
 ```
 
 ## License
