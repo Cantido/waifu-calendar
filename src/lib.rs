@@ -1,3 +1,5 @@
+//! Remember your favorite anime characters' birthdays.
+
 pub mod ics;
 
 use core::fmt;
@@ -15,13 +17,15 @@ use reqwest;
 )]
 struct BirthdaysQuery;
 
+/// A `Month` and day pair.
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Birthday {
-  pub month: Month,
-  pub day: u8,
+  month: Month,
+  day: u8,
 }
 
 impl Birthday {
+  /// Build a new `Birthday` that occurs on the given month and day.
   pub fn new(month: Month, day: u8) -> Self {
     Self {
       month,
@@ -29,6 +33,17 @@ impl Birthday {
     }
   }
 
+  /// Get the month this birthday occurs in.
+  pub fn month(&self) -> Month {
+    self.month
+  }
+
+  /// Get the day of the month this birthday occurs on.
+  pub fn day(&self) -> u8 {
+    self.day
+  }
+
+  /// Build a new `Birthday` that occurred on a `Date`.
   pub fn from_date(date: &Date) -> Self {
     Self {
       month: date.month(),
@@ -36,10 +51,12 @@ impl Birthday {
     }
   }
 
+  /// Check if this birthday will occur on the given `Date`.
   pub fn is_occurring_on(&self, date: &Date) -> bool {
     self.month == date.month() && self.day == date.day()
   }
 
+  /// Get the next `Date` that this birthday will occur on.
   pub fn next_occurrence(&self, today: &Date) -> Result<Date> {
     let bd_date_this_year = self.to_date(today.year())
       .with_context(|| format!("Failed to convert birthday into date with year {}", today.year()))?;
@@ -62,6 +79,7 @@ impl Birthday {
     Ok(next)
   }
 
+  /// Returns a `Date` with the month & day of this birthday, occurring in the given year.
   pub fn to_date(&self, year: i32) -> Result<Date> {
     let date =
       Date::from_calendar_date(year, self.month, self.day)
@@ -70,6 +88,7 @@ impl Birthday {
     Ok(date)
   }
 
+  /// Calculate the `Duration` between now and this birthday.
   pub fn til_next(&self, now: &OffsetDateTime) -> Duration {
     let next = OffsetDateTime::new_utc(self.next_occurrence(&now.date()).unwrap(), Time::MIDNIGHT);
 
@@ -85,13 +104,77 @@ impl fmt::Display for Birthday {
   }
 }
 
+/// A name and birthday pair.
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Character {
-  pub name: String,
-  pub birthday: Birthday,
+  name: String,
+  birthday: Birthday,
 }
 
-pub async fn get_waifu_birthdays(username: &str, now: &OffsetDateTime) -> Result<Vec<Character>> {
+impl Character {
+  /// Create a new Character.
+  pub fn new(name: &str, birthday: Birthday) -> Self {
+    Self {
+      name: name.to_string(),
+      birthday,
+    }
+  }
+
+  /// Get this character's name.
+  pub fn name(&self) -> &str {
+    &self.name
+  }
+
+  /// Get this character's birthday
+  pub fn birthday(&self) -> Birthday {
+    self.birthday
+  }
+}
+
+/// Useful functions for working with a collection of characters.
+///
+/// # Examples
+///
+/// ```
+/// use time::OffsetDateTime;
+///
+/// // Sorts the characters so the closest upcoming birthdays are first.
+/// let characters = waifu_calendar::get_waifu_birthdays("cosmicrose");
+/// characters.sort_by_upcoming(OffsetDateTime::now_utc());
+/// ```
+pub trait Characters {
+  fn sort_by_upcoming(&mut self, now: &OffsetDateTime);
+}
+
+impl Characters for Vec<Character> {
+  fn sort_by_upcoming(&mut self, now: &OffsetDateTime) {
+    self.sort_by(|a, b| {
+      let til_a = a.birthday().til_next(now);
+      let til_b = b.birthday().til_next(now);
+
+      til_a.cmp(&til_b)
+    });
+  }
+}
+
+/// Get the favorite character birthdays for an AniList user.
+///
+/// Characters are not sorted.
+/// See the `Characters` trait for sort options.
+/// Uses AniList's GraphQL API to fetch data on favorites.
+///
+/// # Examples
+///
+/// ```
+/// use time::OffsetDateTime;
+///
+/// // Prints every character's name and birthday
+/// let now = OffsetDateTime::now_utc();
+/// for character in waifu_calendar::get_waifu_birthdays("cosmicrose", &now).iter() {
+///   println!("{}: {}", character.name(), character.birthday());
+/// }
+/// ```
+pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
   let variables = birthdays_query::Variables {
     user: username.to_string(),
   };
@@ -104,7 +187,7 @@ pub async fn get_waifu_birthdays(username: &str, now: &OffsetDateTime) -> Result
 
   let data = response_body.data.expect("Missing response data");
 
-  let mut characters: Vec<Character> =
+  let characters: Vec<Character> =
     data.user.expect("Missing user")
         .favourites.expect("Missing favourites")
         .characters.expect("Missing characters")
@@ -135,13 +218,6 @@ pub async fn get_waifu_birthdays(username: &str, now: &OffsetDateTime) -> Result
             None
           }
         }).collect();
-
-  characters.sort_by(|a, b| {
-    let til_a = a.birthday.til_next(now);
-    let til_b = b.birthday.til_next(now);
-
-    til_a.cmp(&til_b)
-  });
 
   Ok(characters)
 }

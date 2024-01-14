@@ -1,4 +1,4 @@
-use waifu_calendar::Character;
+use waifu_calendar::{Character, Characters, ics::BirthdayICalendar};
 
 use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
@@ -43,17 +43,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
       print_birthday_table(username, &now).await?;
     },
     Some(Commands::Ics { username, output }) => {
-      let now = OffsetDateTime::now_utc();
-      let characters = waifu_calendar::get_waifu_birthdays(username, &now).await?;
-
-      let cal = waifu_calendar::ics::to_ics(characters, now)?;
+      let cal = {
+        let now = OffsetDateTime::now_utc();
+        let mut characters = waifu_calendar::get_waifu_birthdays(username).await
+            .with_context(|| format!("Failed to get waifu birthdays for user {}", username))?;
+        characters.sort_by_upcoming(&now);
+        characters.to_ics(&now)
+            .with_context(|| "Failed to convert character collection into ics")?
+      };
 
       if let Some(path) = output {
         let path =
           if path.is_absolute() {
             path.to_owned()
           } else {
-            let cwd = current_dir()?;
+            let cwd = current_dir()
+              .with_context(|| "Failed to get current working dir")?;
             cwd.join(path)
           };
 
@@ -79,24 +84,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn print_birthday_table(username: &str, now: &OffsetDateTime) -> Result<()> {
   println!("Fetching favorite character birthdays for username {}", username);
 
-  let characters = waifu_calendar::get_waifu_birthdays(username, now).await?;
+  let characters = {
+    let mut characters = waifu_calendar::get_waifu_birthdays(username).await
+      .with_context(|| format!("Failed to get waifu birthdays for user {}", username))?;
+    characters.sort_by_upcoming(&now);
+    characters
+  };
 
   let (characters_bd_today, characters_bd_future): (Vec<Character>, Vec<Character>) = characters.into_iter().partition(|character| {
-    character.birthday.is_occurring_on(&now.date())
+    character.birthday().is_occurring_on(&now.date())
   });
 
   if !characters_bd_today.is_empty() {
     println!("Birthdays TODAY ({}):\n", now.date());
 
     characters_bd_today.iter().for_each(|character| {
-      println!("\t{}", character.name);
+      println!("\t{}", character.name());
     });
   }
 
   let in_thirty_days = *now + Duration::days(30);
 
   let (characters_bd_next_month, characters_bd_future): (Vec<Character>, Vec<Character>) = characters_bd_future.into_iter().partition(|character| {
-    let next = character.birthday.next_occurrence(&now.date()).unwrap();
+    let next = character.birthday().next_occurrence(&now.date()).unwrap();
     next <= in_thirty_days.date()
   });
 
@@ -120,10 +130,10 @@ async fn print_birthday_table(username: &str, now: &OffsetDateTime) -> Result<()
 }
 
 fn character_row(character: &Character, now: &OffsetDateTime) -> String {
-  let til_next = character.birthday.til_next(now);
-  let next = character.birthday.next_occurrence(&now.date()).unwrap();
+  let til_next = character.birthday().til_next(now);
+  let next = character.birthday().next_occurrence(&now.date()).unwrap();
   let til_next_str = format!("{:.0}", til_next);
-  format!("\t{:<20} {:>6} {:<15} {}", character.name, til_next_str, character.birthday.to_string(), next)
+  format!("\t{:<20} {:>6} {:<15} {}", character.name(), til_next_str, character.birthday().to_string(), next)
 }
 
 
