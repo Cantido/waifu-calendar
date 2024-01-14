@@ -1,4 +1,5 @@
 pub mod character;
+pub mod ics;
 
 use anyhow::Result;
 use graphql_client::{GraphQLQuery, Response};
