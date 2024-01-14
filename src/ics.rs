@@ -1,14 +1,12 @@
 use ics::{ICalendar, Event, properties::{DtStart, Summary}, parameters};
 use uuid::Uuid;
-use crate::character::Character;
+use crate::Character;
 
 use anyhow::Result;
 use time::{Duration, OffsetDateTime, Date};
 
-pub fn to_ics(characters: Vec<Character>) -> Result<String> {
+pub fn to_ics(characters: Vec<Character>, now: OffsetDateTime) -> Result<String> {
   let mut calendar = ICalendar::new("2.0", "ics-rs");
-
-  let now = OffsetDateTime::now_utc();
 
   for character in characters {
     let bd = character.birthday.next_occurrence(&now.date())?;

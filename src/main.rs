@@ -1,4 +1,4 @@
-use waifu_calendar::character::Character;
+use waifu_calendar::Character;
 
 use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
@@ -39,12 +39,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
   match &cli.command {
     Some(Commands::Get { username }) => {
-      print_birthday_table(username.to_string()).await?;
+      let now = OffsetDateTime::now_utc();
+      print_birthday_table(username, &now).await?;
     },
     Some(Commands::Ics { username, output }) => {
-      let characters = waifu_calendar::get_waifu_birthdays(username.to_string()).await?;
+      let now = OffsetDateTime::now_utc();
+      let characters = waifu_calendar::get_waifu_birthdays(username, &now).await?;
 
-      let cal = waifu_calendar::ics::to_ics(characters)?;
+      let cal = waifu_calendar::ics::to_ics(characters, now)?;
 
       if let Some(path) = output {
         let path =
@@ -74,11 +76,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
   Ok(())
 }
 
-async fn print_birthday_table(username: String) -> Result<()> {
+async fn print_birthday_table(username: &str, now: &OffsetDateTime) -> Result<()> {
   println!("Fetching favorite character birthdays for username {}", username);
 
-  let characters = waifu_calendar::get_waifu_birthdays(username).await?;
-  let now = OffsetDateTime::now_utc();
+  let characters = waifu_calendar::get_waifu_birthdays(username, now).await?;
 
   let (characters_bd_today, characters_bd_future): (Vec<Character>, Vec<Character>) = characters.into_iter().partition(|character| {
     character.birthday.is_occurring_on(&now.date())
@@ -92,7 +93,7 @@ async fn print_birthday_table(username: String) -> Result<()> {
     });
   }
 
-  let in_thirty_days = now + Duration::days(30);
+  let in_thirty_days = *now + Duration::days(30);
 
   let (characters_bd_next_month, characters_bd_future): (Vec<Character>, Vec<Character>) = characters_bd_future.into_iter().partition(|character| {
     let next = character.birthday.next_occurrence(&now.date()).unwrap();
@@ -119,7 +120,7 @@ async fn print_birthday_table(username: String) -> Result<()> {
 }
 
 fn character_row(character: &Character, now: &OffsetDateTime) -> String {
-  let til_next = character.birthday.til_next(*now);
+  let til_next = character.birthday.til_next(now);
   let next = character.birthday.next_occurrence(&now.date()).unwrap();
   let til_next_str = format!("{:.0}", til_next);
   format!("\t{:<20} {:>6} {:<15} {}", character.name, til_next_str, character.birthday.to_string(), next)
