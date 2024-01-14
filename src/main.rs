@@ -8,14 +8,14 @@ use std::{error::Error, path::PathBuf, fs::File, io::Write, env::current_dir};
 
 shadow!(build);
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 #[command(author, version = build::CLAP_LONG_VERSION, about, long_about = None)]
 struct Cli {
   #[command(subcommand)]
   command: Option<Commands>
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 enum Commands {
   /// Output birthdays to stdout
   Get {

@@ -2,7 +2,7 @@ pub mod ics;
 
 use core::fmt;
 
-use anyhow::{ensure, Result};
+use anyhow::{Context, ensure, Result};
 use graphql_client::{GraphQLQuery, Response};
 use time::{Month, OffsetDateTime, Date, Time, Duration};
 use reqwest;
@@ -15,6 +15,7 @@ use reqwest;
 )]
 struct BirthdaysQuery;
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Birthday {
   pub month: Month,
   pub day: u8,
@@ -40,16 +41,20 @@ impl Birthday {
   }
 
   pub fn next_occurrence(&self, today: &Date) -> Result<Date> {
-    let (today_year, today_ordinal) = today.to_ordinal_date();
-    let (_today_year, bd_ordinal) = self.to_date(today_year)?.to_ordinal_date();
+    let bd_date_this_year = self.to_date(today.year())
+      .with_context(|| format!("Failed to convert birthday into date with year {}", today.year()))?;
+
+    let (_today_year, today_ordinal) = today.to_ordinal_date();
+    let (_today_year, bd_ordinal) = bd_date_this_year.to_ordinal_date();
 
     let next =
       if today_ordinal <= bd_ordinal {
         // Birthday hasn't happened yet this year
-        Date::from_calendar_date(today.year(), self.month, self.day)?
+        bd_date_this_year
       } else {
         // Birthday has already happened this year
-        Date::from_calendar_date(today.year() + 1, self.month, self.day)?
+        self.to_date(today.year() + 1)
+          .with_context(|| format!("Failed to convert birthday into date with year {}", today.year() + 1))?
       };
 
     ensure!(today <= &next, "Somehow came up with a next occurrence that wasn't after now");
@@ -58,7 +63,11 @@ impl Birthday {
   }
 
   pub fn to_date(&self, year: i32) -> Result<Date> {
-    Ok(Date::from_calendar_date(year, self.month, self.day)?)
+    let date =
+      Date::from_calendar_date(year, self.month, self.day)
+        .with_context(|| format!("Failed to build date from birthday {:?} in year {}", self, year))?;
+
+    Ok(date)
   }
 
   pub fn til_next(&self, now: &OffsetDateTime) -> Duration {
@@ -76,6 +85,7 @@ impl fmt::Display for Birthday {
   }
 }
 
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Character {
   pub name: String,
   pub birthday: Birthday,
