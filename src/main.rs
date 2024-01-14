@@ -2,11 +2,14 @@ use waifu_calendar::character::Character;
 
 use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
+use shadow_rs::shadow;
 use time::{Duration, OffsetDateTime};
 use std::{error::Error, path::PathBuf, fs::File, io::Write, env::current_dir};
 
+shadow!(build);
+
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version = build::CLAP_LONG_VERSION, about, long_about = None)]
 struct Cli {
   #[command(subcommand)]
   command: Option<Commands>
