@@ -23,11 +23,11 @@ impl Birthday {
     }
   }
 
-  pub fn is_occurring_on(&self, date: Date) -> bool {
+  pub fn is_occurring_on(&self, date: &Date) -> bool {
     self.month == date.month() && self.day == date.day()
   }
 
-  pub fn next_occurrence(&self, today: Date) -> Result<Date> {
+  pub fn next_occurrence(&self, today: &Date) -> Result<Date> {
     let (today_year, today_ordinal) = today.to_ordinal_date();
     let (_today_year, bd_ordinal) = self.to_date(today_year)?.to_ordinal_date();
 
@@ -40,7 +40,7 @@ impl Birthday {
         Date::from_calendar_date(today.year() + 1, self.month, self.day)?
       };
 
-    ensure!(today <= next, "Somehow came up with a next occurrence that wasn't after now");
+    ensure!(today <= &next, "Somehow came up with a next occurrence that wasn't after now");
 
     Ok(next)
   }
@@ -50,7 +50,7 @@ impl Birthday {
   }
 
   pub fn til_next(&self, now: OffsetDateTime) -> Duration {
-    let next = OffsetDateTime::new_utc(self.next_occurrence(now.date()).unwrap(), Time::MIDNIGHT);
+    let next = OffsetDateTime::new_utc(self.next_occurrence(&now.date()).unwrap(), Time::MIDNIGHT);
 
     let duration_seconds = (next.unix_timestamp() - now.unix_timestamp()).try_into().unwrap();
 
@@ -80,7 +80,7 @@ mod tests {
     let bd = Birthday::new(Month::January, 13);
     let today = Date::from_calendar_date(2024, Month::January, 13).unwrap();
 
-    let next = bd.next_occurrence(today).unwrap();
+    let next = bd.next_occurrence(&today).unwrap();
 
     assert_eq!(next, today);
   }
@@ -90,7 +90,7 @@ mod tests {
     let bd = Birthday::new(Month::January, 15);
     let today = Date::from_calendar_date(2024, Month::January, 13).unwrap();
 
-    let next = bd.next_occurrence(today).unwrap();
+    let next = bd.next_occurrence(&today).unwrap();
 
     assert_eq!(next.year(), 2024);
     assert_eq!(next.month(), bd.month);
@@ -102,7 +102,7 @@ mod tests {
     let bd = Birthday::new(Month::January, 1);
     let today = Date::from_calendar_date(2024, Month::January, 13).unwrap();
 
-    let next = bd.next_occurrence(today).unwrap();
+    let next = bd.next_occurrence(&today).unwrap();
 
     assert_eq!(next.year(), 2025);
     assert_eq!(next.month(), bd.month);
@@ -133,7 +133,7 @@ mod tests {
     let date = Date::from_calendar_date(2024, Month::January, 13).unwrap();
     let bd = Birthday::new(Month::January, 13);
 
-    assert!(bd.is_occurring_on(date));
+    assert!(bd.is_occurring_on(&date));
   }
 
   #[test]
@@ -141,6 +141,6 @@ mod tests {
     let date = Date::from_calendar_date(2024, Month::January, 14).unwrap();
     let bd = Birthday::new(Month::January, 13);
 
-    assert!(!bd.is_occurring_on(date));
+    assert!(!bd.is_occurring_on(&date));
   }
 }
