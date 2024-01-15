@@ -141,16 +141,6 @@ pub struct BirthdayCategories {
 }
 
 /// Useful functions for working with a collection of characters.
-///
-/// # Examples
-///
-/// ```
-/// use time::OffsetDateTime;
-///
-/// // Sorts the characters so the closest upcoming birthdays are first.
-/// let characters = waifu_calendar::get_waifu_birthdays("cosmicrose");
-/// characters.sort_by_upcoming(OffsetDateTime::now_utc());
-/// ```
 pub trait Characters {
   fn sort_by_upcoming(&mut self, now: &OffsetDateTime);
   fn into_birthday_categories(self, now: &OffsetDateTime) -> BirthdayCategories;
@@ -186,23 +176,19 @@ impl Characters for Vec<Character> {
   }
 }
 
+#[derive(thiserror::Error, Debug, Clone)]
+pub enum Error {
+  #[error("user name {0} not found")]
+  UserNotFound(String),
+  #[error("received an unexpected response from AniList")]
+  BadResponse,
+}
+
 /// Get the favorite character birthdays for an AniList user.
 ///
 /// Characters are not sorted.
 /// See the `Characters` trait for sort options.
 /// Uses AniList's GraphQL API to fetch data on favorites.
-///
-/// # Examples
-///
-/// ```
-/// use time::OffsetDateTime;
-///
-/// // Prints every character's name and birthday
-/// let now = OffsetDateTime::now_utc();
-/// for character in waifu_calendar::get_waifu_birthdays("cosmicrose").iter() {
-///   println!("{}: {}", character.name(), character.birthday());
-/// }
-/// ```
 pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
   let variables = birthdays_query::Variables {
     user: username.to_string(),
@@ -214,28 +200,28 @@ pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
   let res = client.post("https://graphql.anilist.co").json(&request_body).send().await?;
   let response_body: Response<birthdays_query::ResponseData> = res.json().await?;
 
-  let data = response_body.data.expect("Missing response data");
+  let data = response_body.data.ok_or(Error::BadResponse).with_context(|| "Missing response data")?;
 
   let characters: Vec<Character> =
-    data.user.with_context(|| "Missing user")?
-        .favourites.with_context(|| "Missing favourites")?
-        .characters.with_context(|| "Missing characters")?
-        .nodes.with_context(|| "Missing character nodes")?
+    data.user.ok_or(Error::UserNotFound(username.to_string()))?
+        .favourites.ok_or(Error::BadResponse).with_context(|| "Missing favourites")?
+        .characters.ok_or(Error::BadResponse).with_context(|| "Missing characters")?
+        .nodes.ok_or(Error::BadResponse).with_context(|| "Missing character nodes")?
         .iter().filter_map(|node_result| {
-          let node = node_result.as_ref().unwrap();
-          let dob = node.date_of_birth.as_ref().expect("Missing character date of birth");
+          let node = node_result.as_ref()?;
+          let dob = node.date_of_birth.as_ref()?;
 
           let month_opt = dob.month.as_ref();
           let day_opt = dob.day.as_ref();
 
           if month_opt.is_some() && day_opt.is_some() {
-            let month_num: u8 = month_opt.unwrap().to_owned().try_into().unwrap();
-            let month = Month::try_from(month_num).unwrap();
-            let day: u8 = day_opt.unwrap().to_owned().try_into().unwrap();
+            let month_num: u8 = month_opt?.to_owned().try_into().ok()?;
+            let month = Month::try_from(month_num).ok()?;
+            let day: u8 = day_opt?.to_owned().try_into().ok()?;
 
             let birthday = Birthday::new(month, day);
 
-            let name = node.name.as_ref().unwrap().full.as_ref().unwrap().to_string();
+            let name = node.name.as_ref()?.full.as_ref()?.to_string();
 
             let character = Character {
               name,

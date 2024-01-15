@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use axum::{Router, extract::{Query, State}, response::{Response, IntoResponse, Html}, http::{StatusCode, header}, routing::get};
 use handlebars::{Handlebars, DirectorySourceOptions, to_json};
+use recloser::{AsyncRecloser, Recloser};
 use serde::Serialize;
 use time::OffsetDateTime;
 use tower_http::services::ServeFile;
@@ -14,12 +15,14 @@ struct NoHandlebarsData;
 
 struct AppState<'a> {
   handlebars: Handlebars<'a>,
+  circuit_breaker: AsyncRecloser,
 }
 
 impl<'a> AppState<'a> {
-  pub fn new(handlebars: Handlebars<'a>) -> Self {
+  pub fn new(handlebars: Handlebars<'a>, circuit_breaker: AsyncRecloser) -> Self {
     Self {
-      handlebars
+      handlebars,
+      circuit_breaker,
     }
   }
 }
@@ -29,13 +32,15 @@ pub fn router() -> Result<Router> {
   handlebars.set_strict_mode(true);
   handlebars.register_templates_directory("templates", DirectorySourceOptions::default())?;
 
+  let circuit_breaker = AsyncRecloser::from(Recloser::default());
+
   let router =
     Router::new()
       .route("/", get(get_index))
       .route_service("/assets/pico.min.css", ServeFile::new("assets/pico.min.css"))
       .route("/ics", get(get_birthday_ics))
       .route("/cal", get(get_birthday_html))
-      .with_state(Arc::new(AppState::new(handlebars)));
+      .with_state(Arc::new(AppState::new(handlebars, circuit_breaker)));
 
   Ok(router)
 }
@@ -101,7 +106,7 @@ async fn get_birthday_html(State(state): State<Arc<AppState<'_>>>, Query(query):
     }
 
     let now = OffsetDateTime::now_utc();
-    let mut characters = crate::get_waifu_birthdays(&username).await
+    let mut characters = state.circuit_breaker.call(crate::get_waifu_birthdays(&username)).await
       .map_err(|_| {
         let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
         (
@@ -139,7 +144,7 @@ async fn get_birthday_ics(State(state): State<Arc<AppState<'_>>>, Query(query): 
     }
 
     let now = OffsetDateTime::now_utc();
-    let mut characters = crate::get_waifu_birthdays(&username).await
+    let mut characters = state.circuit_breaker.call_with(should_melt, crate::get_waifu_birthdays(&username)).await
       .map_err(|_| {
         let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
         (
@@ -163,9 +168,17 @@ async fn get_birthday_ics(State(state): State<Arc<AppState<'_>>>, Query(query): 
 }
 
 fn render_internal_server_error(state: &Arc<AppState<'_>>) -> Response {
-  let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
+  let body = state.handlebars.render("internal_server_error", &NoHandlebarsData {}).unwrap();
   (
     StatusCode::INTERNAL_SERVER_ERROR,
     Html::from(body),
   ).into_response()
+}
+
+fn should_melt(err: &anyhow::Error) -> bool {
+  let cast_err = err.downcast_ref::<crate::Error>();
+  match cast_err {
+    Some(crate::Error::UserNotFound(_)) => false,
+    _ => true,
+  }
 }
