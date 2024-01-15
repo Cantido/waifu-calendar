@@ -43,10 +43,7 @@ pub fn router() -> Result<Router> {
 async fn get_index(State(state): State<Arc<AppState<'_>>>) -> Result<Response, Response> {
   let data: HashMap<String, String> = HashMap::new();
   let body = state.handlebars.render("index", &data)
-    .map_err(|e| {
-      println!("{:?}", e);
-      StatusCode::INTERNAL_SERVER_ERROR.into_response()
-    })?;
+    .map_err(|_| render_internal_server_error(&state))?;
 
   Ok((
     Html::from(body)
@@ -118,18 +115,12 @@ async fn get_birthday_html(State(state): State<Arc<AppState<'_>>>, Query(query):
     let categories = characters.into_birthday_categories(&now);
 
     BirthdayHtml::new(categories, &now)
-      .map_err(|e| {
-        println!("{:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR.into_response()
-      })?
+      .map_err(|_| render_internal_server_error(&state))?
   };
 
   let body =
     state.handlebars.render("calendar", &to_json(cal))
-      .map_err(|e| {
-        println!("{:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR.into_response()
-      })?;
+      .map_err(|_| render_internal_server_error(&state))?;
 
   Ok((
     Html::from(body)
@@ -159,7 +150,7 @@ async fn get_birthday_ics(State(state): State<Arc<AppState<'_>>>, Query(query): 
 
     characters.sort_by_upcoming(&now);
     characters.to_ics(&now)
-      .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?
+      .map_err(|_| render_internal_server_error(&state))?
   };
 
   Ok((
@@ -169,4 +160,12 @@ async fn get_birthday_ics(State(state): State<Arc<AppState<'_>>>, Query(query): 
     ],
     cal,
   ).into_response())
+}
+
+fn render_internal_server_error(state: &Arc<AppState<'_>>) -> Response {
+  let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
+  (
+    StatusCode::INTERNAL_SERVER_ERROR,
+    Html::from(body),
+  ).into_response()
 }
