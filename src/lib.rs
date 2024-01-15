@@ -199,7 +199,7 @@ impl Characters for Vec<Character> {
 ///
 /// // Prints every character's name and birthday
 /// let now = OffsetDateTime::now_utc();
-/// for character in waifu_calendar::get_waifu_birthdays("cosmicrose", &now).iter() {
+/// for character in waifu_calendar::get_waifu_birthdays("cosmicrose").iter() {
 ///   println!("{}: {}", character.name(), character.birthday());
 /// }
 /// ```
