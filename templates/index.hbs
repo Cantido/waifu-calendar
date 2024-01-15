@@ -1,0 +1,31 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WaifuCalendar</title>
+
+  <link rel="stylesheet" href="/assets/pico.min.css">
+</head>
+
+<body>
+
+  <main class="container">
+    <hgroup>
+      <h1>Waifu Calendar</h1>
+      <p>Never miss best girl's birthday</p>
+    </hgroup>
+    <form method="GET">
+      <label>
+        AniList username
+      <input id="username-field" name="username" autocomplete="username" type="text" minlength="3" required />
+      </label>
+      <button type="submit" formaction="/cal">View Calendar</button>
+      <button type="submit" formaction="/ics">Download ICS</button>
+    </form>
+  </main>
+
+</body>
+
+</html>

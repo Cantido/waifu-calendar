@@ -13,14 +13,17 @@ keywords = ["anime", "calendar"]
 
 [dependencies]
 anyhow = "1.0.79"
+axum = "0.7.4"
 clap = { version = "4.4.16", features = ["derive"] }
 graphql_client = "0.13.0"
+handlebars = { version = "5.0.0", features = ["dir_source"] }
 ics = "0.5.8"
 reqwest = { version = "0.11.23", features = ["json"] }
 serde = { version = "1.0.195", features = ["derive"] }
 shadow-rs = "0.26.0"
-time = { version = "0.3.31" }
+time = { version = "0.3.31", features = ["serde"] }
 tokio = { version = "1.35.1", features = ["full"] }
+tower-http = { version = "0.5.1", features = ["fs"] }
 uuid = { version = "1.6.1", features = ["v7"] }
 
 [build-dependencies]

@@ -1,0 +1,34 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WaifuCalendar</title>
+
+  <link rel="stylesheet" href="/assets/pico.min.css">
+</head>
+
+<body>
+
+  <main class="container">
+    <h1>Birthdays</h1>
+    {{#if today}}
+      <h2>Today</h2>
+      {{> character_list characters=today}}
+    {{/if}}
+
+    {{#if within_thirty_days}}
+      <h2>Next 30 days</h2>
+      {{> character_list characters=within_thirty_days}}
+    {{/if}}
+
+    {{#if future}}
+      <h2>Future</h2>
+      {{> character_list characters=future}}
+    {{/if}}
+  </main>
+
+</body>
+
+</html>

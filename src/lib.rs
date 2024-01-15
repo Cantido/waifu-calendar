@@ -1,11 +1,13 @@
 //! Remember your favorite anime characters' birthdays.
 
+pub mod http;
 pub mod ics;
 
 use core::fmt;
 
 use anyhow::{Context, ensure, Result};
 use graphql_client::{GraphQLQuery, Response};
+use serde::Serialize;
 use time::{Month, OffsetDateTime, Date, Time, Duration};
 use reqwest;
 
@@ -18,7 +20,7 @@ use reqwest;
 struct BirthdaysQuery;
 
 /// A `Month` and day pair.
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize)]
 pub struct Birthday {
   month: Month,
   day: u8,
@@ -105,7 +107,7 @@ impl fmt::Display for Birthday {
 }
 
 /// A name and birthday pair.
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize)]
 pub struct Character {
   name: String,
   birthday: Birthday,
@@ -131,6 +133,13 @@ impl Character {
   }
 }
 
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize)]
+pub struct BirthdayCategories {
+  pub today: Vec<Character>,
+  pub within_thirty_days: Vec<Character>,
+  pub future: Vec<Character>,
+}
+
 /// Useful functions for working with a collection of characters.
 ///
 /// # Examples
@@ -144,6 +153,7 @@ impl Character {
 /// ```
 pub trait Characters {
   fn sort_by_upcoming(&mut self, now: &OffsetDateTime);
+  fn into_birthday_categories(self, now: &OffsetDateTime) -> BirthdayCategories;
 }
 
 impl Characters for Vec<Character> {
@@ -154,6 +164,25 @@ impl Characters for Vec<Character> {
 
       til_a.cmp(&til_b)
     });
+  }
+
+  fn into_birthday_categories(self, now: &OffsetDateTime) -> BirthdayCategories {
+    let (characters_bd_today, characters_bd_future): (Vec<Character>, Vec<Character>) = self.into_iter().partition(|character| {
+      character.birthday().is_occurring_on(&now.date())
+    });
+
+    let in_thirty_days = *now + Duration::days(30);
+
+    let (characters_bd_next_month, characters_bd_future): (Vec<Character>, Vec<Character>) = characters_bd_future.into_iter().partition(|character| {
+      let next = character.birthday().next_occurrence(&now.date()).unwrap();
+      next <= in_thirty_days.date()
+    });
+
+    BirthdayCategories {
+      today: characters_bd_today,
+      within_thirty_days: characters_bd_next_month,
+      future: characters_bd_future
+    }
   }
 }
 
@@ -188,10 +217,10 @@ pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
   let data = response_body.data.expect("Missing response data");
 
   let characters: Vec<Character> =
-    data.user.expect("Missing user")
-        .favourites.expect("Missing favourites")
-        .characters.expect("Missing characters")
-        .nodes.expect("Missing character nodes")
+    data.user.with_context(|| "Missing user")?
+        .favourites.with_context(|| "Missing favourites")?
+        .characters.with_context(|| "Missing characters")?
+        .nodes.with_context(|| "Missing character nodes")?
         .iter().filter_map(|node_result| {
           let node = node_result.as_ref().unwrap();
           let dob = node.date_of_birth.as_ref().expect("Missing character date of birth");

@@ -1,0 +1,20 @@
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Time til</th>
+        <th>Birthday</th>
+        <th>Next</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each characters}}
+        <tr>
+          <td>{{name}}</td>
+          <td>{{til_next_rounded}}</td>
+          <td>{{birthday}}</td>
+          <td>{{next_occurrence}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>

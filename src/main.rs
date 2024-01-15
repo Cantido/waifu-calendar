@@ -3,7 +3,7 @@ use waifu_calendar::{Character, Characters, ics::BirthdayICalendar};
 use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
 use shadow_rs::shadow;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use std::{error::Error, path::PathBuf, fs::File, io::Write, env::current_dir};
 
 shadow!(build);
@@ -30,7 +30,8 @@ enum Commands {
     /// Output ICalendar to a file instead of to stdout
     #[arg(short, long, value_name = "FILE")]
     output: Option<PathBuf>,
-  }
+  },
+  Serve,
 }
 
 #[tokio::main]
@@ -75,6 +76,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("{}", cal);
       }
     },
+    Some(Commands::Serve) => {
+      let app = waifu_calendar::http::router()?;
+      let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+      axum::serve(listener, app).await.unwrap();
+    },
     &None => {}
   }
 
@@ -91,37 +97,28 @@ async fn print_birthday_table(username: &str, now: &OffsetDateTime) -> Result<()
     characters
   };
 
-  let (characters_bd_today, characters_bd_future): (Vec<Character>, Vec<Character>) = characters.into_iter().partition(|character| {
-    character.birthday().is_occurring_on(&now.date())
-  });
+  let categories = characters.into_birthday_categories(now);
 
-  if !characters_bd_today.is_empty() {
+  if !categories.today.is_empty() {
     println!("Birthdays TODAY ({}):\n", now.date());
 
-    characters_bd_today.iter().for_each(|character| {
+    categories.today.iter().for_each(|character| {
       println!("\t{}", character.name());
     });
   }
 
-  let in_thirty_days = *now + Duration::days(30);
-
-  let (characters_bd_next_month, characters_bd_future): (Vec<Character>, Vec<Character>) = characters_bd_future.into_iter().partition(|character| {
-    let next = character.birthday().next_occurrence(&now.date()).unwrap();
-    next <= in_thirty_days.date()
-  });
-
-  if !characters_bd_next_month.is_empty() {
+  if !categories.within_thirty_days.is_empty() {
     println!("\nUpcoming birthdays (next 30 days):\n");
 
-    characters_bd_next_month.iter().for_each(|character| {
+    categories.within_thirty_days.iter().for_each(|character| {
         println!("{}", character_row(character, &now));
     });
   }
 
-  if !characters_bd_future.is_empty() {
+  if !categories.future.is_empty() {
     println!("\nFuture birthdays:\n");
 
-    characters_bd_future.iter().for_each(|character| {
+    categories.future.iter().for_each(|character| {
         println!("{}", character_row(character, &now));
     });
   }
