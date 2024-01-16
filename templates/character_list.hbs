@@ -11,9 +11,9 @@
       {{#each characters}}
         <tr>
           <td>{{name}}</td>
-          <td>{{til_next_rounded}}</td>
-          <td>{{birthday}}</td>
-          <td>{{next_occurrence}}</td>
+          <td><time datetime="{{til_next_iso}}">{{til_next_rounded}}</time></td>
+          <td><time datetime="{{birthday_iso}}">{{birthday}}</time></td>
+          <td><time datetime="{{next_occurrence}}">{{next_occurrence}}</time></td>
         </tr>
       {{/each}}
     </tbody>

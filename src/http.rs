@@ -4,7 +4,7 @@ use axum::{Router, extract::{Query, State}, response::{Response, IntoResponse, H
 use handlebars::{Handlebars, DirectorySourceOptions, to_json};
 use recloser::{AsyncRecloser, Recloser};
 use serde::Serialize;
-use time::OffsetDateTime;
+use time::{OffsetDateTime, Duration};
 use tower_http::services::ServeFile;
 use crate::{ics::BirthdayICalendar, Characters, Character, BirthdayCategories};
 
@@ -61,6 +61,7 @@ struct CharacterHtml {
   til_next_iso: String,
   til_next_rounded: String,
   birthday: String,
+  birthday_iso: String,
   next_occurrence: String,
 }
 
@@ -71,12 +72,21 @@ impl CharacterHtml {
 
     Ok(Self {
       next_occurrence: next_occurrence.to_string(),
-      til_next_iso: til_next.to_string(),
+      til_next_iso: duration_to_iso(&til_next),
       til_next_rounded: format!("{:.0}", til_next),
       name: character.name().to_string(),
       birthday: character.birthday().to_string(),
+      birthday_iso: character.birthday().to_iso_string(),
     })
   }
+}
+
+fn duration_to_iso(dur: &Duration) -> String {
+  let days = dur.whole_days();
+  let hours = (*dur - Duration::days(dur.whole_days())).whole_hours();
+  let minutes = (*dur - Duration::hours(dur.whole_hours())).whole_minutes();
+  let seconds = (*dur - Duration::minutes(dur.whole_minutes())).whole_seconds();
+  format!("P{}DT{}H{}M{}S", days, hours, minutes, seconds)
 }
 
 #[derive(Debug, Serialize)]

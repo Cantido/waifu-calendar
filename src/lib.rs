@@ -98,6 +98,10 @@ impl Birthday {
 
     Duration::new(duration_seconds, 0)
   }
+
+  pub fn to_iso_string(&self) -> String {
+    format!("{:02}-{:02}", self.month as u8, self.day)
+  }
 }
 
 impl fmt::Display for Birthday {
