@@ -1,20 +1,20 @@
-  <table>
-    <thead>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Time til</th>
+      <th>Birthday</th>
+      <th>Next</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each characters}}
       <tr>
-        <th>Name</th>
-        <th>Time til</th>
-        <th>Birthday</th>
-        <th>Next</th>
+        <td>{{name}}</td>
+        <td><time datetime="{{til_next_iso}}">{{til_next_rounded}}</time></td>
+        <td><time datetime="{{birthday_iso}}">{{birthday}}</time></td>
+        <td><time datetime="{{next_occurrence}}">{{next_occurrence}}</time></td>
       </tr>
-    </thead>
-    <tbody>
-      {{#each characters}}
-        <tr>
-          <td>{{name}}</td>
-          <td><time datetime="{{til_next_iso}}">{{til_next_rounded}}</time></td>
-          <td><time datetime="{{birthday_iso}}">{{birthday}}</time></td>
-          <td><time datetime="{{next_occurrence}}">{{next_occurrence}}</time></td>
-        </tr>
-      {{/each}}
-    </tbody>
-  </table>
+    {{/each}}
+  </tbody>
+</table>
