@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 
 use axum::{Router, extract::{Query, State}, response::{Response, IntoResponse, Html}, http::{StatusCode, header}, routing::get};
 use handlebars::{Handlebars, DirectorySourceOptions, to_json};
@@ -42,7 +42,7 @@ pub fn router() -> Result<Router> {
       value.len().try_into().unwrap_or(u32::MAX)
     })
     .max_capacity(1024 * 1024)
-    .time_to_live(Duration::from_secs(15 * 60))
+    .time_to_live(std::time::Duration::from_secs(15 * 60))
     .build();
 
   let router =
