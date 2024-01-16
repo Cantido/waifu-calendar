@@ -18,6 +18,7 @@ clap = { version = "4.4.16", features = ["derive"] }
 graphql_client = "0.13.0"
 handlebars = { version = "5.0.0", features = ["dir_source"] }
 ics = "0.5.8"
+moka = { version = "0.12.3", features = ["future"] }
 recloser = "1.1.0"
 reqwest = { version = "0.11.23", features = ["json"] }
 serde = { version = "1.0.195", features = ["derive"] }

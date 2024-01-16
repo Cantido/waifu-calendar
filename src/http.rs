@@ -1,7 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use axum::{Router, extract::{Query, State}, response::{Response, IntoResponse, Html}, http::{StatusCode, header}, routing::get};
 use handlebars::{Handlebars, DirectorySourceOptions, to_json};
+use moka::future::Cache;
 use recloser::{AsyncRecloser, Recloser};
 use serde::Serialize;
 use time::{OffsetDateTime, Duration};
@@ -16,11 +17,13 @@ struct NoHandlebarsData;
 struct AppState<'a> {
   handlebars: Handlebars<'a>,
   circuit_breaker: AsyncRecloser,
+  cache: Cache<String, Vec<Character>>,
 }
 
 impl<'a> AppState<'a> {
-  pub fn new(handlebars: Handlebars<'a>, circuit_breaker: AsyncRecloser) -> Self {
+  pub fn new(cache: Cache<String, Vec<Character>>, handlebars: Handlebars<'a>, circuit_breaker: AsyncRecloser) -> Self {
     Self {
+      cache,
       handlebars,
       circuit_breaker,
     }
@@ -34,13 +37,21 @@ pub fn router() -> Result<Router> {
 
   let circuit_breaker = AsyncRecloser::from(Recloser::default());
 
+  let cache = Cache::builder()
+    .weigher(|_key, value: &Vec<Character>| -> u32 {
+      value.len().try_into().unwrap_or(u32::MAX)
+    })
+    .max_capacity(1024 * 1024)
+    .time_to_live(Duration::from_secs(15 * 60))
+    .build();
+
   let router =
     Router::new()
       .route("/", get(get_index))
       .route_service("/assets/pico.min.css", ServeFile::new("assets/pico.min.css"))
       .route("/ics", get(get_birthday_ics))
       .route("/cal", get(get_birthday_html))
-      .with_state(Arc::new(AppState::new(handlebars, circuit_breaker)));
+      .with_state(Arc::new(AppState::new(cache, handlebars, circuit_breaker)));
 
   Ok(router)
 }
@@ -116,7 +127,16 @@ async fn get_birthday_html(State(state): State<Arc<AppState<'_>>>, Query(query):
     }
 
     let now = OffsetDateTime::now_utc();
-    let mut characters = state.circuit_breaker.call(crate::get_waifu_birthdays(&username)).await
+
+    let cache_result = state.cache.get(username).await;
+    let cache_hit = cache_result.is_some();
+
+    let mut characters =
+      if let Some(characters) = cache_result {
+        Ok(characters)
+      } else {
+        state.circuit_breaker.call_with(should_melt, crate::get_waifu_birthdays(&username)).await
+      }
       .map_err(|_| {
         let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
         (
@@ -126,6 +146,10 @@ async fn get_birthday_html(State(state): State<Arc<AppState<'_>>>, Query(query):
       })?;
 
     characters.sort_by_upcoming(&now);
+
+    if !cache_hit {
+      state.cache.insert(username.to_string(), characters.clone()).await;
+    }
 
     let categories = characters.into_birthday_categories(&now);
 
@@ -154,7 +178,15 @@ async fn get_birthday_ics(State(state): State<Arc<AppState<'_>>>, Query(query): 
     }
 
     let now = OffsetDateTime::now_utc();
-    let mut characters = state.circuit_breaker.call_with(should_melt, crate::get_waifu_birthdays(&username)).await
+    let cache_result = state.cache.get(username).await;
+    let cache_hit = cache_result.is_some();
+
+    let mut characters =
+      if let Some(characters) = cache_result {
+        Ok(characters)
+      } else {
+        state.circuit_breaker.call_with(should_melt, crate::get_waifu_birthdays(&username)).await
+      }
       .map_err(|_| {
         let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
         (
@@ -162,6 +194,10 @@ async fn get_birthday_ics(State(state): State<Arc<AppState<'_>>>, Query(query): 
           Html::from(body),
         ).into_response()
       })?;
+
+    if !cache_hit {
+      state.cache.insert(username.to_string(), characters.clone()).await;
+    }
 
     characters.sort_by_upcoming(&now);
     characters.to_ics(&now)
