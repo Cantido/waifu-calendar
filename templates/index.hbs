@@ -48,7 +48,7 @@ http://localhost:8080/ics?username=Owldown
       <form method="GET">
         <label>
           AniList username
-        <input id="username-field" name="username" autocomplete="username" type="text" minlength="3" required />
+        <input id="username-field" name="username" autocomplete="username" type="text" minlength="2" maxlength="64" pattern="^[^\s]$" required />
         </label>
         <button type="submit" formaction="/cal">View Calendar</button>
         <button type="submit" formaction="/ics">Download ICS</button>
