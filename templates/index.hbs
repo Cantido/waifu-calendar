@@ -4,14 +4,51 @@
       <h1>Waifu Calendar</h1>
       <p>Never miss best girl's birthday</p>
     </hgroup>
-    <form method="GET">
-      <label>
-        AniList username
-      <input id="username-field" name="username" autocomplete="username" type="text" minlength="3" required />
-      </label>
-      <button type="submit" formaction="/cal">View Calendar</button>
-      <button type="submit" formaction="/ics">Download ICS</button>
-    </form>
+    <div class="grid">
+      <div>
+        <p>How to never forget:</p>
+        <ol>
+          <li>Enter your AniList username (case sensitive)</li>
+          <li>Click "View Calendar"</li>
+          <li>Bookmark the page</li>
+        </ol>
+        <p>
+          The "Download ICS" button will send you a file with the next
+          year's worth of birthdays. You can import it with pretty much
+          any calendar application out there.
+        </p>
+        <p>
+          You can also import the calendar via this URL, if your app
+          supports such a thing:
+        </p>
+        <style>
+pre code {
+  display: block;
+  background: none;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: scroll;
+  max-width: 100%;
+  min-width: 100px;
+  padding: 0;
+}
+        </style>
+<pre></code>
+http://localhost:8080/ics?username=Owldown
+</code></pre>
+        <p>
+          Of course, replacing the <code>username</code> with your own username.
+        </p>
+      </div>
+      <form method="GET">
+        <label>
+          AniList username
+        <input id="username-field" name="username" autocomplete="username" type="text" minlength="3" required />
+        </label>
+        <button type="submit" formaction="/cal">View Calendar</button>
+        <button type="submit" formaction="/ics">Download ICS</button>
+      </form>
+    </div>
   </main>
 {{/inline}}
 {{> layout}}
