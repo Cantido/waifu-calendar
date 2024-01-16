@@ -103,14 +103,16 @@ fn duration_to_iso(dur: &Duration) -> String {
 
 #[derive(Debug, Serialize)]
 struct BirthdayHtml {
+  username: String,
   today: Vec<CharacterHtml>,
   within_thirty_days: Vec<CharacterHtml>,
   future: Vec<CharacterHtml>,
 }
 
 impl BirthdayHtml {
-  pub fn new(categories: BirthdayCategories, now: &OffsetDateTime) -> Result<BirthdayHtml> {
+  pub fn new(username: &str, categories: BirthdayCategories, now: &OffsetDateTime) -> Result<BirthdayHtml> {
     Ok(Self {
+      username: username.to_string(),
       today: categories.today.iter().filter_map(|c| CharacterHtml::new(c, &now).ok()).collect(),
       within_thirty_days: categories.within_thirty_days.iter().filter_map(|c| CharacterHtml::new(c, &now).ok()).collect(),
       future: categories.future.iter().filter_map(|c| CharacterHtml::new(c, &now).ok()).collect(),
@@ -154,7 +156,7 @@ async fn get_birthday_html(State(state): State<Arc<AppState<'_>>>, Query(query):
 
     let categories = characters.into_birthday_categories(&now);
 
-    BirthdayHtml::new(categories, &now)
+    BirthdayHtml::new(username, categories, &now)
       .map_err(|_| render_internal_server_error(&state))?
   };
 

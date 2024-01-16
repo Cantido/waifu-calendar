@@ -1,20 +1,40 @@
 {{#*inline "main"}}
   <main class="container">
+    <nav aria-label="breadcrumb">
+      <ul>
+        <li><a href="/">Waifu Calendar</a></li>
+        <li><a aria-current="page">{{username}}</a></li>
+      </ul>
+    </nav>
+
     <h1>Birthdays</h1>
-    {{#if today}}
+
+    <section>
       <h2>Today</h2>
-      {{> character_list characters=today}}
-    {{/if}}
+      {{#if today}}
+        {{> character_list characters=today}}
+      {{else}}
+        <p>None of your favorite characters have birthdays today.</p>
+      {{/if}}
+    </section>
 
-    {{#if within_thirty_days}}
+    <section>
       <h2>Next 30 days</h2>
-      {{> character_list characters=within_thirty_days}}
-    {{/if}}
+      {{#if within_thirty_days}}
+        {{> character_list characters=within_thirty_days}}
+      {{else}}
+        <p>None of your favorite characters have birthdays within the next thirty days.</p>
+      {{/if}}
+    </section>
 
-    {{#if future}}
-      <h2>Future</h2>
-      {{> character_list characters=future}}
-    {{/if}}
+    <section>
+      <h2>Next year</h2>
+      {{#if future}}
+        {{> character_list characters=future}}
+      {{else}}
+        <p>None of your favorite characters have birthdays within the next year.</p>
+      {{/if}}
+    </section>
   </main>
 {{/inline}}
 {{> layout}}
