@@ -49,6 +49,7 @@ pub fn router() -> Result<Router> {
     Router::new()
       .route("/", get(get_index))
       .route_service("/assets/pico.min.css", ServeFile::new("assets/pico.min.css"))
+      .route_service("/humans.txt", ServeFile::new("assets/humans.txt"))
       .route("/ics", get(get_birthday_ics))
       .route("/cal", get(get_birthday_html))
       .with_state(Arc::new(AppState::new(cache, handlebars, circuit_breaker)));
