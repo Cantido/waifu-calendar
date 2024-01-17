@@ -1,6 +1,8 @@
 //! Remember your favorite anime characters' birthdays.
 
+#[cfg(feature = "http")]
 pub mod http;
+
 pub mod ics;
 
 use core::fmt;

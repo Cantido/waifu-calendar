@@ -9,7 +9,15 @@ license = "MIT"
 keywords = ["anime", "calendar"]
 # No categories seem to apply :(
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+http = [
+  "dep:handlebars",
+  "dep:tower-http",
+]
+
+[[bin]]
+name = "server"
+required-features = ["http"]
 
 [dependencies]
 anyhow = "1.0.79"
@@ -17,7 +25,7 @@ axum = "0.7.4"
 clap = { version = "4.4.16", features = ["derive"] }
 env_logger = "0.10.1"
 graphql_client = "0.13.0"
-handlebars = { version = "5.0.0", features = ["dir_source"] }
+handlebars = { version = "5.0.0", features = ["dir_source"], optional = true }
 ics = "0.5.8"
 log = "0.4.20"
 moka = { version = "0.12.3", features = ["future"] }
@@ -28,7 +36,7 @@ shadow-rs = "0.26.0"
 thiserror = "1.0.56"
 time = { version = "0.3.31", features = ["serde"] }
 tokio = { version = "1.35.1", features = ["full"] }
-tower-http = { version = "0.5.1", features = ["fs"] }
+tower-http = { version = "0.5.1", features = ["fs"], optional = true }
 uuid = { version = "1.6.1", features = ["v7"] }
 
 [build-dependencies]
