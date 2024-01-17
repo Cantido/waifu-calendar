@@ -3,6 +3,7 @@
 #[cfg(feature = "http")]
 pub mod http;
 
+#[cfg(feature = "ics")]
 pub mod ics;
 
 use core::fmt;
