@@ -16,7 +16,7 @@ http = [
 ]
 
 [[bin]]
-name = "server"
+name = "waifu-server"
 required-features = ["http"]
 
 [dependencies]
