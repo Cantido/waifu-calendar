@@ -15,10 +15,10 @@ $ cargo install waifu-calendar
 
 ## Usage
 
-After pulling the project, run the `get` command with your AniList username.
+After pulling the project, run `waifucal get` with your AniList username.
 
 ```console
-$ waifu-calendar get Owldown
+$ waifucal get Owldown
 Fetching favorite character birthdays for username Owldown
 
 Upcoming birthdays (next 30 days):
@@ -50,7 +50,7 @@ You can also generate a `*.ics` file with the next year's worth of birthdays,
 compatible with Google Calendar, iCal, Thunderbird, or probably whatever other calendar you use.
 
 ```console
-$ waifu-calendar ics -o birthdays.ics Owldown
+$ waifucal ics -o birthdays.ics Owldown
 ```
 
 For all commands and options, use the `help` command.
@@ -58,6 +58,34 @@ For all commands and options, use the `help` command.
 ```console
 $ waifu-calendar help
 ```
+
+### As an HTTP Server
+
+This project defines a server executable that presents a simple HTTP interface to access ths functionality.
+To install it, enable the `http` feature when you install this tool:
+
+```console
+$ cargo install waifu-calendar --features http
+```
+
+Then run it with the name `waifu-server`
+
+```console
+$ waifu-server
+```
+
+The server will then be accessible at <http://localhost:8080>.
+
+### As a library
+
+If you just wish to use this project as a library, disable all default features:
+
+```console
+$ cargo add waifu-calendar --no-default-features
+```
+
+The `ics` feature for generating ICalendar files is also a default feature,
+so add that feature back if you need it.
 
 ## License
 
