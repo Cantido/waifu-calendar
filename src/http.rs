@@ -13,10 +13,11 @@ use log::{error, info};
 use moka::future::Cache;
 use recloser::{AsyncRecloser, Recloser};
 use serde::Serialize;
-use time::{Duration, OffsetDateTime};
+use time::{Duration, OffsetDateTime, UtcOffset};
 use tower_http::services::ServeFile;
 
 use anyhow::Result;
+use tz::TimeZone;
 
 #[derive(Serialize)]
 struct NoHandlebarsData;
@@ -179,8 +180,6 @@ async fn get_birthday_html(
             return Err(StatusCode::UNPROCESSABLE_ENTITY.into_response());
         }
 
-        let now = OffsetDateTime::now_utc();
-
         let cache_result = state.cache.get(username).await;
         let cache_hit = cache_result.is_some();
 
@@ -227,6 +226,11 @@ async fn get_birthday_html(
             }
         })?;
 
+        let tz = query.get("tz").and_then(|o| TimeZone::from_posix_tz(o).ok()).unwrap_or(TimeZone::utc());
+        let offset = UtcOffset::from_whole_seconds(tz.find_current_local_time_type().unwrap().ut_offset()).unwrap();
+
+        let now = OffsetDateTime::now_utc().to_offset(offset);
+
         characters.sort_by_upcoming(&now);
 
         if !cache_hit {
@@ -263,7 +267,6 @@ async fn get_birthday_ics(
             return Err(StatusCode::UNPROCESSABLE_ENTITY.into_response());
         }
 
-        let now = OffsetDateTime::now_utc();
         let cache_result = state.cache.get(username).await;
         let cache_hit = cache_result.is_some();
 
@@ -290,6 +293,10 @@ async fn get_birthday_ics(
                 .await;
         }
 
+        let tz = query.get("tz").and_then(|o| TimeZone::from_posix_tz(o).ok()).unwrap_or(TimeZone::utc());
+        let offset = UtcOffset::from_whole_seconds(tz.find_current_local_time_type().unwrap().ut_offset()).unwrap();
+
+        let now = OffsetDateTime::now_utc().to_offset(offset);
         characters.sort_by_upcoming(&now);
         characters
             .to_ics(&now)

@@ -105,14 +105,10 @@ impl Birthday {
 
     /// Calculate the `Duration` between now and this birthday.
     pub fn til_next(&self, now: &OffsetDateTime) -> Duration {
-        let next =
-            OffsetDateTime::new_utc(self.next_occurrence(&now.date()).unwrap(), Time::MIDNIGHT);
+        let next_date = self.next_occurrence(&now.date()).unwrap();
+        let next = OffsetDateTime::new_in_offset(next_date, Time::MIDNIGHT, now.offset());
 
-        let duration_seconds = (next.unix_timestamp() - now.unix_timestamp())
-            .try_into()
-            .unwrap();
-
-        Duration::new(duration_seconds, 0)
+        next - *now
     }
 
     pub fn to_iso_string(&self) -> String {
