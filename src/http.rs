@@ -55,6 +55,7 @@ pub fn router() -> Result<Router> {
     Router::new()
       .route("/", get(get_index))
       .route_service("/assets/pico.min.css", ServeFile::new(assets_path.join("assets/pico.min.css")))
+      .route_service("/assets/frieren.jpg", ServeFile::new(assets_path.join("assets/frieren.jpg")))
       .route_service("/humans.txt", ServeFile::new(assets_path.join("assets/humans.txt")))
       .route("/ics", get(get_birthday_ics))
       .route("/cal", get(get_birthday_html))
