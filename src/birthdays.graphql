@@ -1,7 +1,10 @@
-query BirthdaysQuery ($user:String!) {
+query BirthdaysQuery ($user:String!, $page:Int!) {
   User(name:$user) {
     favourites {
-      characters {
+      characters(page:$page, perPage:50) {
+        pageInfo {
+          hasNextPage
+        }
         nodes {
           name {
             full

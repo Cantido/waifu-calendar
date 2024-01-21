@@ -211,63 +211,82 @@ pub enum Error {
 /// See the `Characters` trait for sort options.
 /// Uses AniList's GraphQL API to fetch data on favorites.
 pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
-    let variables = birthdays_query::Variables {
-        user: username.to_string(),
-    };
+    let mut page = 1;
+    let mut has_next_page = true;
 
-    let request_body = BirthdaysQuery::build_query(variables);
+    let mut characters = vec![];
 
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://graphql.anilist.co")
-        .header("User-Agent", "WaifuCalendar")
-        .json(&request_body)
-        .send()
-        .await?;
-    let response_body: Response<birthdays_query::ResponseData> = res.json().await?;
+    while has_next_page {
+        let variables = birthdays_query::Variables {
+            page,
+            user: username.to_string(),
+        };
 
-    let data = response_body
-        .data
-        .ok_or(Error::BadResponse)
-        .with_context(|| "Missing response data")?;
+        let request_body = BirthdaysQuery::build_query(variables);
 
-    let characters: Vec<Character> = data
-        .user
-        .ok_or(Error::UserNotFound(username.to_string()))?
-        .favourites
-        .ok_or(Error::BadResponse)
-        .with_context(|| "Missing favourites")?
-        .characters
-        .ok_or(Error::BadResponse)
-        .with_context(|| "Missing characters")?
-        .nodes
-        .ok_or(Error::BadResponse)
-        .with_context(|| "Missing character nodes")?
-        .iter()
-        .filter_map(|node_result| {
-            let node = node_result.as_ref()?;
-            let dob = node.date_of_birth.as_ref()?;
+        let client = reqwest::Client::new();
+        let res = client
+            .post("https://graphql.anilist.co")
+            .header("User-Agent", "WaifuCalendar")
+            .json(&request_body)
+            .send()
+            .await?;
+        let response_body: Response<birthdays_query::ResponseData> = res.json().await?;
 
-            let month_opt = dob.month.as_ref();
-            let day_opt = dob.day.as_ref();
+        let data = response_body
+            .data
+            .ok_or(Error::BadResponse)
+            .with_context(|| "Missing response data")?;
 
-            if month_opt.is_some() && day_opt.is_some() {
-                let month_num: u8 = month_opt?.to_owned().try_into().ok()?;
-                let month = Month::try_from(month_num).ok()?;
-                let day: u8 = day_opt?.to_owned().try_into().ok()?;
+        let response_page = data
+            .user
+            .ok_or(Error::UserNotFound(username.to_string()))?
+            .favourites
+            .ok_or(Error::BadResponse)
+            .with_context(|| "Missing favourites")?
+            .characters
+            .ok_or(Error::BadResponse)
+            .with_context(|| "Missing characters")?;
 
-                let birthday = Birthday::new(month, day);
+        let mut page_characters: Vec<Character> = response_page
+            .nodes
+            .ok_or(Error::BadResponse)
+            .with_context(|| "Missing character nodes")?
+            .iter()
+            .filter_map(|node_result| {
+                let node = node_result.as_ref()?;
+                let dob = node.date_of_birth.as_ref()?;
 
-                let name = node.name.as_ref()?.full.as_ref()?.to_string();
+                let month_opt = dob.month.as_ref();
+                let day_opt = dob.day.as_ref();
 
-                let character = Character { name, birthday };
+                if month_opt.is_some() && day_opt.is_some() {
+                    let month_num: u8 = month_opt?.to_owned().try_into().ok()?;
+                    let month = Month::try_from(month_num).ok()?;
+                    let day: u8 = day_opt?.to_owned().try_into().ok()?;
 
-                Some(character)
-            } else {
-                None
-            }
-        })
-        .collect();
+                    let birthday = Birthday::new(month, day);
+
+                    let name = node.name.as_ref()?.full.as_ref()?.to_string();
+
+                    let character = Character { name, birthday };
+
+                    Some(character)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+            characters.append(&mut page_characters);
+
+            has_next_page =
+                response_page
+                .page_info.ok_or(Error::BadResponse).with_context(|| "Missing page_info")?
+                .has_next_page.ok_or(Error::BadResponse).with_context(|| "Missing has_next_page")?;
+
+            page += 1;
+        }
 
     Ok(characters)
 }

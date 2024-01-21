@@ -207,8 +207,8 @@ async fn get_birthday_html(
                         .unwrap();
                     (StatusCode::INTERNAL_SERVER_ERROR, Html::from(body)).into_response()
                 }
-                Ok(crate::Error::BadResponse) => {
-                    error!("Unknown error fetching from AniList");
+                Ok(other_err) => {
+                    error!("Unknown error fetching from AniList: {:?}", other_err);
                     let body = state
                         .handlebars
                         .render("internal_server_error", &NoHandlebarsData {})
