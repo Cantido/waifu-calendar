@@ -10,7 +10,7 @@
   <tbody>
     {{#each characters}}
       <tr>
-        <td>{{name}}</td>
+        <td><a href="{{url}}" target="_blank" rel="noopener noreferrer">{{name}}</a></td>
         <td><time datetime="{{til_next_iso}}">{{til_next_rounded}}</time></td>
         <td><time datetime="{{birthday_iso}}">{{birthday}}</time></td>
         <td><time datetime="{{next_occurrence}}">{{next_occurrence}}</time></td>

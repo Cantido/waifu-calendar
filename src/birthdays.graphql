@@ -9,6 +9,7 @@ query BirthdaysQuery ($user:String!, $page:Int!) {
           name {
             full
           }
+          siteUrl
           dateOfBirth {
             year
             month

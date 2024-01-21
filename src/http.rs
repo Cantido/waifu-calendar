@@ -98,6 +98,7 @@ async fn get_index(State(state): State<Arc<AppState<'_>>>) -> Result<Response, R
 #[derive(Debug, Serialize)]
 struct CharacterHtml {
     name: String,
+    url: String,
     til_next_iso: String,
     til_next_rounded: String,
     birthday: String,
@@ -111,6 +112,7 @@ impl CharacterHtml {
         let til_next = character.birthday().til_next(&now);
 
         Ok(Self {
+            url: character.url.to_string(),
             next_occurrence: next_occurrence.to_string(),
             til_next_iso: duration_to_iso(&til_next),
             til_next_rounded: format!("{:.0}", til_next),

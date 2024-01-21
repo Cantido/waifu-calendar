@@ -130,14 +130,16 @@ impl fmt::Display for Birthday {
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize)]
 pub struct Character {
     name: String,
+    url: String,
     birthday: Birthday,
 }
 
 impl Character {
     /// Create a new Character.
-    pub fn new(name: &str, birthday: Birthday) -> Self {
+    pub fn new(name: &str, url: &str, birthday: Birthday) -> Self {
         Self {
             name: name.to_string(),
+            url: url.to_string(),
             birthday,
         }
     }
@@ -269,7 +271,9 @@ pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
 
                     let name = node.name.as_ref()?.full.as_ref()?.to_string();
 
-                    let character = Character { name, birthday };
+                    let url = node.site_url.as_ref()?.to_string();
+
+                    let character = Character { name, url, birthday };
 
                     Some(character)
                 } else {
