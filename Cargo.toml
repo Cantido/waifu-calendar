@@ -60,6 +60,7 @@ time = { version = "0.3.31", features = ["serde"] }
 tokio = { version = "1.35.1", features = ["full"], optional = true }
 tower-http = { version = "0.5.1", features = ["fs"], optional = true }
 tz-rs = "0.6.14"
+tzdb = "0.6.1"
 uuid = { version = "1.7.0", features = ["v7"], optional = true }
 
 [build-dependencies]

@@ -86,8 +86,13 @@ pub fn router() -> Result<Router> {
     Ok(router)
 }
 
+#[derive(Serialize)]
+struct IndexHtml<'a> {
+   timezones: &'a[&'a str],
+}
+
 async fn get_index(State(state): State<Arc<AppState<'_>>>) -> Result<Response, Response> {
-    let data: HashMap<String, String> = HashMap::new();
+    let data = IndexHtml { timezones: tzdb::TZ_NAMES };
     let body = state
         .handlebars
         .render("index", &data)
