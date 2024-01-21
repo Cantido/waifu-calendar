@@ -204,7 +204,7 @@ pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
   let request_body = BirthdaysQuery::build_query(variables);
 
   let client = reqwest::Client::new();
-  let res = client.post("https://graphql.anilist.co").json(&request_body).send().await?;
+  let res = client.post("https://graphql.anilist.co").header("User-Agent", "WaifuCalendar").json(&request_body).send().await?;
   let response_body: Response<birthdays_query::ResponseData> = res.json().await?;
 
   let data = response_body.data.ok_or(Error::BadResponse).with_context(|| "Missing response data")?;

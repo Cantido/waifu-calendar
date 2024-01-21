@@ -39,7 +39,7 @@ pre code {
 }
         </style>
 <pre><code>
-http://localhost:8080/ics?username=Owldown
+https://waifu-calendar.fly.dev/ics?username=Owldown
 </code></pre>
         <p>
           Of course, replacing the <code>username</code> with your own username.
@@ -48,7 +48,7 @@ http://localhost:8080/ics?username=Owldown
       <form method="GET">
         <label>
           AniList username
-        <input id="username-field" name="username" autocomplete="username" type="text" minlength="2" maxlength="64" pattern="^[^\s]$" required />
+        <input id="username-field" name="username" autocomplete="username" type="text" minlength="2" maxlength="64" pattern="^[^\s]*$" required />
         </label>
         <button type="submit" formaction="/cal">View Calendar</button>
         <button type="submit" formaction="/ics">Download ICS</button>

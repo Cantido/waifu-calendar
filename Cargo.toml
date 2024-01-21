@@ -2,6 +2,7 @@
 name = "waifu-calendar"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 authors = ["Rosa Richter"]
 description = "A tool to fetch your favorite characters' birthdays from AniList"
 repository = "https://github.com/Cantido/waifu-calendar"
@@ -18,7 +19,7 @@ name = "waifucal"
 required-features = ["cli"]
 
 [features]
-default = ["cli"]
+default = ["cli", "http"]
 http = [
   "ics",
   "dep:axum",

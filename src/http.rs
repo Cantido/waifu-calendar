@@ -1,7 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, path::PathBuf};
 
 use axum::{Router, extract::{Query, State}, response::{Response, IntoResponse, Html}, http::{StatusCode, header}, routing::get};
 use handlebars::{Handlebars, DirectorySourceOptions, to_json};
+use log::{info, error};
 use moka::future::Cache;
 use recloser::{AsyncRecloser, Recloser};
 use serde::Serialize;
@@ -31,9 +32,14 @@ impl<'a> AppState<'a> {
 }
 
 pub fn router() -> Result<Router> {
+  let mut assets_path = PathBuf::new();
+  assets_path.push(std::env::var("WAIFU_ASSETS").unwrap_or(".".to_string()));
+
+  info!("Loading assets from {:?}", assets_path);
+
   let mut handlebars = Handlebars::new();
   handlebars.set_strict_mode(true);
-  handlebars.register_templates_directory("templates", DirectorySourceOptions::default())?;
+  handlebars.register_templates_directory(assets_path.join("templates"), DirectorySourceOptions::default())?;
 
   let circuit_breaker = AsyncRecloser::from(Recloser::default());
 
@@ -48,8 +54,8 @@ pub fn router() -> Result<Router> {
   let router =
     Router::new()
       .route("/", get(get_index))
-      .route_service("/assets/pico.min.css", ServeFile::new("assets/pico.min.css"))
-      .route_service("/humans.txt", ServeFile::new("assets/humans.txt"))
+      .route_service("/assets/pico.min.css", ServeFile::new(assets_path.join("assets/pico.min.css")))
+      .route_service("/humans.txt", ServeFile::new(assets_path.join("assets/humans.txt")))
       .route("/ics", get(get_birthday_ics))
       .route("/cal", get(get_birthday_html))
       .with_state(Arc::new(AppState::new(cache, handlebars, circuit_breaker)));
@@ -140,12 +146,43 @@ async fn get_birthday_html(State(state): State<Arc<AppState<'_>>>, Query(query):
       } else {
         state.circuit_breaker.call_with(should_melt, crate::get_waifu_birthdays(&username)).await
       }
-      .map_err(|_| {
-        let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
-        (
-          StatusCode::NOT_FOUND,
-          Html::from(body),
-        ).into_response()
+      .map_err(|e| {
+        match e {
+          recloser::Error::Inner(err) => {
+            match err.downcast::<crate::Error>() {
+              Ok(crate::Error::UserNotFound(_)) => {
+                let body = state.handlebars.render("user_not_found", &NoHandlebarsData {}).unwrap();
+                (
+                  StatusCode::NOT_FOUND,
+                  Html::from(body),
+                ).into_response()
+              }
+              Err(err) => {
+                error!("Error contacting AniList: {:?}", err);
+                let body = state.handlebars.render("internal_server_error", &NoHandlebarsData {}).unwrap();
+                (
+                  StatusCode::INTERNAL_SERVER_ERROR,
+                  Html::from(body),
+                ).into_response()
+              }
+              Ok(crate::Error::BadResponse) => {
+                error!("Unknown error fetching from AniList");
+                let body = state.handlebars.render("internal_server_error", &NoHandlebarsData {}).unwrap();
+                (
+                  StatusCode::INTERNAL_SERVER_ERROR,
+                  Html::from(body),
+                ).into_response()
+              }
+            }
+          }
+          recloser::Error::Rejected => {
+            let body = state.handlebars.render("internal_server_error", &NoHandlebarsData {}).unwrap();
+            (
+              StatusCode::INTERNAL_SERVER_ERROR,
+              Html::from(body),
+            ).into_response()
+          }
+        }
       })?;
 
     characters.sort_by_upcoming(&now);
