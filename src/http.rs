@@ -225,9 +225,9 @@ async fn get_birthday_html(
             recloser::Error::Rejected => {
                 let body = state
                     .handlebars
-                    .render("internal_server_error", &NoHandlebarsData {})
+                    .render("service_unavailable", &NoHandlebarsData {})
                     .unwrap();
-                (StatusCode::INTERNAL_SERVER_ERROR, Html::from(body)).into_response()
+                (StatusCode::SERVICE_UNAVAILABLE, Html::from(body)).into_response()
             }
         })?;
 
