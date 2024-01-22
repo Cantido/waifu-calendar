@@ -205,6 +205,13 @@ async fn get_birthday_html(
                         .unwrap();
                     (StatusCode::NOT_FOUND, Html::from(body)).into_response()
                 }
+                Ok(crate::Error::RateLimited) => {
+                    let body = state
+                        .handlebars
+                        .render("too_many_requests", &NoHandlebarsData {})
+                        .unwrap();
+                    (StatusCode::TOO_MANY_REQUESTS, Html::from(body)).into_response()
+                }
                 Err(err) => {
                     error!("Error contacting AniList: {:?}", err);
                     let body = state

@@ -8,7 +8,7 @@ pub mod ics;
 
 use core::fmt;
 
-use anyhow::{ensure, Context, Result};
+use anyhow::{ensure, Context, Result, bail};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 use serde::Serialize;
@@ -201,6 +201,8 @@ pub enum Error {
     UserNotFound(String),
     #[error("received an unexpected response from AniList")]
     BadResponse,
+    #[error("Rate limited by the AniList API")]
+    RateLimited,
 }
 
 /// Get the favorite character birthdays for an AniList user.
@@ -229,6 +231,11 @@ pub async fn get_waifu_birthdays(username: &str) -> Result<Vec<Character>> {
             .json(&request_body)
             .send()
             .await?;
+
+        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            bail!(Error::RateLimited);
+        }
+
         let response_body: Response<birthdays_query::ResponseData> = res.json().await?;
 
         let data = response_body
