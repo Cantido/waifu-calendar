@@ -52,7 +52,7 @@ https://waifu-calendar.fly.dev/ics?username=Owldown
         </label>
         <label>
             Time zone
-            <select "tz-select" name="tz">
+            <select id="tz-select" name="tz">
                 {{#each timezones}}
                     <option>{{this}}</option>
                 {{/each}}
@@ -61,6 +61,10 @@ https://waifu-calendar.fly.dev/ics?username=Owldown
         <button type="submit" formaction="/cal">View Calendar</button>
         <button type="submit" formaction="/ics">Download ICS</button>
       </form>
+      <script>
+        let input = document.getElementById("tz-select");
+        input.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      </script>
     </div>
   </main>
 {{/inline}}
