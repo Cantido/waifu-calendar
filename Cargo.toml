@@ -56,7 +56,7 @@ reqwest = { version = "0.11.24", features = ["json"] }
 serde = { version = "1.0.196", features = ["derive"] }
 shadow-rs = { version = "0.26.1", optional = true }
 thiserror = "1.0.56"
-time = { version = "0.3.31", features = ["serde"] }
+time = { version = "0.3.34", features = ["serde"] }
 tokio = { version = "1.36.0", features = ["full"], optional = true }
 tower-http = { version = "0.5.1", features = ["fs"], optional = true }
 tz-rs = "0.6.14"
