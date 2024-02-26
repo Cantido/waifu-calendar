@@ -58,7 +58,7 @@ shadow-rs = { version = "0.26.1", optional = true }
 thiserror = "1.0.57"
 time = { version = "0.3.34", features = ["serde"] }
 tokio = { version = "1.36.0", features = ["full"], optional = true }
-tower-http = { version = "0.5.1", features = ["fs"], optional = true }
+tower-http = { version = "0.5.2", features = ["fs"], optional = true }
 tz-rs = "0.6.14"
 tzdb = "0.6.1"
 uuid = { version = "1.7.0", features = ["v7"], optional = true }
