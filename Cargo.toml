@@ -6,7 +6,7 @@ build = "build.rs"
 authors = ["Rosa Richter"]
 description = "A tool to fetch your favorite characters' birthdays from AniList"
 repository = "https://github.com/Cantido/waifu-calendar"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 keywords = ["anime", "calendar"]
 # No categories seem to apply :(
 
