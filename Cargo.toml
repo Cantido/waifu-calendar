@@ -57,7 +57,7 @@ serde = { version = "1.0.204", features = ["derive"] }
 shadow-rs = { version = "0.31.1", optional = true }
 thiserror = "1.0.63"
 time = { version = "0.3.36", features = ["serde"] }
-tokio = { version = "1.39.2", features = ["full"], optional = true }
+tokio = { version = "1.39.3", features = ["full"], optional = true }
 tower-http = { version = "0.5.2", features = ["fs"], optional = true }
 tz-rs = "0.6.14"
 tzdb = "0.6.1"
