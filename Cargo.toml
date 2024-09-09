@@ -42,7 +42,7 @@ cli = [
 ]
 
 [dependencies]
-anyhow = "1.0.86"
+anyhow = "1.0.87"
 axum = { version = "0.7.5", optional = true }
 clap = { version = "4.5.16", features = ["derive"], optional = true }
 env_logger = { version = "0.10.2", optional = true }
