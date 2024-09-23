@@ -59,7 +59,7 @@ thiserror = "1.0.63"
 time = { version = "0.3.36", features = ["serde"] }
 tokio = { version = "1.40.0", features = ["full"], optional = true }
 tower-http = { version = "0.5.2", features = ["fs"], optional = true }
-tz-rs = "0.6.14"
+tz-rs = "0.7.0"
 tzdb = "0.6.1"
 uuid = { version = "1.10.0", features = ["v7"], optional = true }
 

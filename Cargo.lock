@@ -2050,13 +2050,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tz-rs"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1450bf2b99397e72070e7935c89facaa80092ac812502200375f1f7d33c71a1"
+
+[[package]]
 name = "tzdb"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b580f6b365fa89f5767cdb619a55d534d04a4e14c2d7e5b9a31e94598687fb1"
 dependencies = [
  "iana-time-zone",
- "tz-rs",
+ "tz-rs 0.6.14",
  "tzdb_data",
 ]
 
@@ -2066,7 +2072,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "629555d2921f3f0dc0de98699415a8b2b61dfcd3a0b082a327f7ed748bbb2b76"
 dependencies = [
- "tz-rs",
+ "tz-rs 0.6.14",
 ]
 
 [[package]]
@@ -2191,7 +2197,7 @@ dependencies = [
  "time",
  "tokio",
  "tower-http",
- "tz-rs",
+ "tz-rs 0.7.0",
  "tzdb",
  "uuid",
 ]
