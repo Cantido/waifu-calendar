@@ -45,7 +45,7 @@ cli = [
 anyhow = "1.0.95"
 axum = { version = "0.7.9", optional = true }
 clap = { version = "4.5.23", features = ["derive"], optional = true }
-env_logger = { version = "0.11.5", optional = true }
+env_logger = { version = "0.11.6", optional = true }
 graphql_client = "0.14.0"
 handlebars = { version = "6.2.0", features = ["dir_source"], optional = true }
 ics = { version = "0.5.8", optional = true }
