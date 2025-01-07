@@ -60,7 +60,7 @@ impl Birthday {
 
     /// Get the next `Date` that this birthday will occur on.
     pub fn next_occurrence(&self, today: &Date) -> Result<Date> {
-        let bd_date_this_year = self.to_date(today.year()).with_context(|| {
+        let bd_date_this_year = self.to_date(today).with_context(|| {
             format!(
                 "Failed to convert birthday into date with year {}",
                 today.year()
@@ -75,7 +75,7 @@ impl Birthday {
             bd_date_this_year
         } else {
             // Birthday has already happened this year
-            self.to_date(today.year() + 1).with_context(|| {
+            self.to_date(today).with_context(|| {
                 format!(
                     "Failed to convert birthday into date with year {}",
                     today.year() + 1
@@ -91,12 +91,20 @@ impl Birthday {
         Ok(next)
     }
 
-    /// Returns a `Date` with the month & day of this birthday, occurring in the given year.
-    pub fn to_date(&self, year: i32) -> Result<Date> {
-        let date = Date::from_calendar_date(year, self.month, self.day).with_context(|| {
+    /// Returns the first occurrence of the birthday that is strictly later than a given `Date`.
+    pub fn to_date(&self, today: &Date) -> Result<Date> {
+        let current_year = today.year();
+        let occurrence_year =
+            if self.month() == Month::February && self.day() == 29 {
+                let til_leap_year = 4 - (current_year % 4);
+                today.year() + til_leap_year
+            } else {
+                today.year()
+            };
+        let date = Date::from_calendar_date(occurrence_year, self.month, self.day).with_context(|| {
             format!(
                 "Failed to build date from birthday {:?} in year {}",
-                self, year
+                self, occurrence_year
             )
         })?;
 
@@ -341,9 +349,19 @@ mod tests {
     #[test]
     fn to_date() {
         let bd = Birthday::new(Month::January, 13);
-        let date = bd.to_date(2024).unwrap();
+        let date = bd.to_date(&Date::from_calendar_date(2024, Month::January, 1).unwrap()).unwrap();
 
         assert_eq!(date.year(), 2024);
+        assert_eq!(date.month(), bd.month);
+        assert_eq!(date.day(), bd.day);
+    }
+
+    #[test]
+    fn to_date_leap_year() {
+        let bd = Birthday::new(Month::February, 29);
+        let date = bd.to_date(&Date::from_calendar_date(2025, Month::January, 1).unwrap()).unwrap();
+
+        assert_eq!(date.year(), 2028);
         assert_eq!(date.month(), bd.month);
         assert_eq!(date.day(), bd.day);
     }
