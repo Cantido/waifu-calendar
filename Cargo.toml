@@ -53,7 +53,7 @@ log = "0.4.25"
 moka = { version = "0.12.10", features = ["future"], optional = true }
 recloser = { version = "1.1.1", optional = true }
 reqwest = { version = "0.12.12", features = ["json"] }
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { version = "1.0.218", features = ["derive"] }
 shadow-rs = { version = "1.0.0", optional = true }
 thiserror = "2.0.11"
 time = { version = "0.3.37", features = ["serde"] }
