@@ -61,7 +61,7 @@ tokio = { version = "1.44.0", features = ["full"], optional = true }
 tower-http = { version = "0.6.2", features = ["fs"], optional = true }
 tz-rs = "0.7.0"
 tzdb = "0.7.2"
-uuid = { version = "1.15.1", features = ["v7"], optional = true }
+uuid = { version = "1.16.0", features = ["v7"], optional = true }
 
 [build-dependencies]
 shadow-rs = "1.0.1"
