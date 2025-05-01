@@ -52,7 +52,7 @@ ics = { version = "0.5.8", optional = true }
 log = "0.4.27"
 moka = { version = "0.12.10", features = ["future"], optional = true }
 recloser = { version = "1.1.1", optional = true }
-reqwest = { version = "0.12.14", features = ["json"] }
+reqwest = { version = "0.12.15", features = ["json"] }
 serde = { version = "1.0.219", features = ["derive"] }
 shadow-rs = { version = "1.1.1", optional = true }
 thiserror = "2.0.12"
